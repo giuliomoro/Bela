@@ -473,6 +473,7 @@ fileView.on('file-rejected', function (filename) {
 // editor view
 var editorView = new (require('./Views/EditorView'))('editor', [models.project, models.error, models.settings], models.settings);
 editorView.on('upload', function (fileData) {
+	console.log("Uploade is being emitted");
 	socket.emit('process-event', {
 		event: 'upload',
 		currentProject: models.project.getKey('currentProject'),
@@ -1813,11 +1814,12 @@ var EditorView = function (_View) {
 
 		// this function is called when the user modifies the editor
 		_this.editor.session.on('change', function (e) {
-			//console.log('upload', !uploadBlocked);
+			console.log('upload', !uploadBlocked);
 			if (!uploadBlocked) {
+				console.log('upload was not blocked');
 				_this.editorChanged();
 				_this.editor.session.bgTokenizer.fireUpdateEvent(0, _this.editor.session.getLength());
-				// console.log('firing tokenizer');
+				 console.log('firing tokenizer');
 			}
 		});
 
