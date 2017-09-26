@@ -285,8 +285,8 @@ int PRU::initialise(int pru_num, bool uniformSampleRate, int mux_channels, bool 
     /* Map PRU's INTC */
     prussdrv_pruintc_init(&pruss_intc_initdata);
 
-	pru_sharedram_mirror = (uint32_t*)calloc(1, 16384);
-	pru_dataram_mirror = (uint32_t*)calloc(1, 16384);
+	pru_sharedram_mirror = (uint32_t*)calloc(1, 16384 * 4);
+	pru_dataram_mirror = (uint32_t*)calloc(1, 16384 * 4);
 
     /* Map PRU memory to pointers */
 	prussdrv_map_prumem (PRUSS0_SHARED_DATARAM, (void **)&pru_sharedram);
