@@ -111,7 +111,7 @@ static int create_and_start_thread(pthread_t* task, const char* taskName, int pr
 	return 0;
 }
 // from xenomai-3/demo/posix/cobalt/xddp-echo.c
-static int createXenomaiPipe(const char* portName)
+static int createXenomaiPipe(const char* portName, int poolsz)
 {
 	/*
 	 * Get a datagram socket to bind to the RT endpoint. Each
@@ -133,11 +133,12 @@ static int createXenomaiPipe(const char* portName)
 	int ret = setsockopt(s, SOL_XDDP, XDDP_LABEL,
 			 &plabel, sizeof(plabel));
 	/*
-	 * Set a local 16k pool for the RT endpoint. Memory needed to
+	 * Set a local pool for the RT endpoint. Memory needed to
 	 * convey datagrams will be pulled from this pool, instead of
 	 * Xenomai's system pool.
 	 */
-	int poolsz = 16384; /* bytes */
+	if(poolsz == 0)
+		poolsz = 16384; /* bytes */
 	ret = setsockopt(s, SOL_XDDP, XDDP_POOLSZ,
 			 &poolsz, sizeof(poolsz));
 	if (ret)

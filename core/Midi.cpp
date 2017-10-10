@@ -287,7 +287,7 @@ int Midi::writeTo(const char* port){
 	if(ret < 0){
 #endif
 #ifdef XENOMAI_SKIN_posix
-	ret = createXenomaiPipe(outId);
+	ret = createXenomaiPipe(outId, 0);
 	sock = ret;
 	if(ret <= 0){
 #endif

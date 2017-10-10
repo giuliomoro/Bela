@@ -35,7 +35,7 @@ void Aux_Task::create(const char* _name, void(*_callback)(void* ptr), void* _poi
 void Aux_Task::__create(){
 	// create the xenomai task
 	int priority = 0;
-	int stackSize = 0;
+	int stackSize = 65536 * 2;
 #ifdef XENOMAI_SKIN_native //posix skin does evertything in one go below
 	if (int ret = rt_task_create(&task, name, stackSize, priority, T_JOINABLE))
 
@@ -53,7 +53,7 @@ void Aux_Task::__create(){
 	if(ret < 0)
 #endif
 #ifdef XENOMAI_SKIN_posix
-	int ret = createXenomaiPipe(p_name);
+	int ret = createXenomaiPipe(p_name, stackSize);
 	pipeSocket = ret;
 	if(ret <= 0)
 #endif
@@ -83,7 +83,7 @@ void Aux_Task::schedule(void* ptr, size_t size){
 #endif
 	if(ret < 0)
 	{
-		rt_fprintf(stderr, "Error while sending to pipe from %s: (%d) %s\n", name, -ret, strerror(-ret));
+		rt_fprintf(stderr, "Error while sending to pipe from %s: (%d) %s (size: %d)\n", name, errno, strerror(errno), size);
 	}
 }
 void Aux_Task::schedule(const char* str){
@@ -101,7 +101,13 @@ void Aux_Task::cleanup(){
 	rt_pipe_delete(&pipe);
 #endif
 #ifdef XENOMAI_SKIN_posix
-	pthread_cancel(thread);
+	// TODO: someone needs to be done to terminate the tasks appropriately
+	// Currently they are probably just hanging on the pipes
+	// However the three lines below cause a segfault after the first time they are run
+	// char ptr[1];
+	// int ret = sendto(pipeSocket, ptr, 1, 0, NULL, 0); // unblock the pipe
+	// pthread_cancel(thread);
+	// also we should join them!
 #endif
 }
 

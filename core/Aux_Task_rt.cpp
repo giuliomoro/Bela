@@ -60,7 +60,7 @@ void Aux_Task_rt::__create(){
 	struct mq_attr attr;
 	attr.mq_maxmsg = 100; 
 	attr.mq_msgsize = 100000;
-    	queueDesc = __wrap_mq_open(q_name, O_CREAT | O_RDONLY, 0644, &attr);
+    	queueDesc = __wrap_mq_open(q_name, O_CREAT | O_RDWR, 0644, &attr);
 	if(queueDesc < 0)
 	{
 		fprintf(stderr, "Unable to open message queue %s: (%d) %s\n", q_name, errno, strerror(errno));
@@ -110,7 +110,7 @@ void Aux_Task_rt::cleanup(){
 	rt_queue_delete(&queue);
 #endif
 #ifdef XENOMAI_SKIN_posix
-	pthread_cancel(thread);
+	//pthread_cancel(thread);
 	mq_close(queueDesc);
 #warning should call mq_unlink(queueName);
 #endif
@@ -138,6 +138,7 @@ void Aux_Task_rt::empty_loop(){
 		}
 		empty_callback();
 	}
+	free(buffer);
 #endif
 }
 void Aux_Task_rt::str_loop(){
