@@ -74,7 +74,8 @@ endif # ifndef PROJECT
 COMMAND_LINE_OPTIONS := --pru-file $(BELA_DIR)/pru_rtaudio.bin $(COMMAND_LINE_OPTIONS)
 run: pru_rtaudio.bin
 else
-build/core/PRU.o: include/pru_rtaudio_bin.h
+build/core/PRU.o: include/pru_rtaudio_mcasp_poll_bin.h
+build/core/PRU.o: include/pru_rtaudio_mcasp_interrupts_bin.h
 endif #ifeq($(RUN_WITH_PRU_BIN),true)
 
 ifdef PROJECT
@@ -392,16 +393,16 @@ build/core/%.o: ./core/%.S
 	$(AT) echo ' ...done'
 	$(AT) echo ' '
 
-pru_rtaudio.bin: pru_rtaudio.p
+%.bin: %.p
 	$(AT) echo 'Building $<...'
-	$(AT) pasm -V2 -b pru_rtaudio.p > /dev/null
+	$(AT) pasm -V2 -b "$<" > /dev/null
 	$(AT) echo ' ...done'
 	$(AT) echo ' '
 
-include/pru_rtaudio_bin.h: pru_rtaudio.p
+include/%_bin.h: %.p
 	$(AT) echo 'Building $<...'
-	$(AT) pasm -V2 -L -c pru_rtaudio.p > /dev/null
-	$(AT) mv pru_rtaudio_bin.h include/
+	$(AT) pasm -V2 -L -c "$<" > /dev/null
+	$(AT) mv  "$(<:%.p=%_bin.h)" include/
 	$(AT) echo ' ...done'
 	$(AT) echo ' '
 

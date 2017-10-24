@@ -5,8 +5,7 @@
  */
 
 #include "../include/Spi_Codec.h"
-
-//#define CTAG_BEAST_16CH
+#include "../include/Bela_config.h"
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -263,7 +262,7 @@ int Spi_Codec::_spiTransfer(unsigned char* tx_buf, unsigned char* rx_buf, size_t
 			return 1;
 		}
 		if (origValue != rx_buf[2] && tx_buf[1] != REG_PLL_CLK_CONTROL_1){
-			printf("Verification of new value for register 0x%X of CTAG face has been failed (original value: 0x%X, new value: 0x%X).\n", tx_buf[1], origValue, rx_buf[2]);
+			printf("Verification of new value for register 0x%X of CTAG face has failed (original value: 0x%X, new value: 0x%X).\n", tx_buf[1], origValue, rx_buf[2]);
 			return 1;
 		}
 		tx_buf[0] = tx_buf[0] & 0x0; // Reset write only flag

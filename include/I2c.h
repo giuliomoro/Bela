@@ -45,7 +45,8 @@ protected:
 	int i2C_file;
 
 public:
-	int initI2C_RW(int bus, int address, int file);
+	int initI2C_RW(int bus, int address);
+	int initI2C_RW(int bus, int address, int unused);
 	virtual int readI2C() = 0;
 	int closeI2C();
 
@@ -54,11 +55,16 @@ public:
 };
 
 
-inline int I2c::initI2C_RW(int bus, int address, int fileHnd)
+inline int I2c::initI2C_RW(int bus, int address, int unused)
+{
+	fprintf(stderr, "The last paraemter to I2c::initI2C_RW is ignored. It will be removed in a future version.\n");
+	initI2C_RW(bus, address);
+}
+
+inline int I2c::initI2C_RW(int bus, int address)
 {
 	i2C_bus 	= bus;
 	i2C_address = address;
-	i2C_file 	= fileHnd;
 
 	// open I2C device as a file
 	char namebuf[MAX_BUF_NAME];
@@ -66,14 +72,14 @@ inline int I2c::initI2C_RW(int bus, int address, int fileHnd)
 
 	if ((i2C_file = open(namebuf, O_RDWR)) < 0)
 	{
-			cout << "Failed to open " << namebuf << " I2C Bus" << endl;
-			return(1);
+		cout << "Failed to open " << namebuf << " I2C Bus" << endl;
+		return(1);
 	}
 
 	// target device as slave
 	if (ioctl(i2C_file, I2C_SLAVE, i2C_address) < 0){
-			cout << "I2C_SLAVE address " << i2C_address << " failed..." << endl;
-			return(2);
+		cout << "I2C_SLAVE address " << i2C_address << " failed..." << endl;
+		return(2);
 	}
 
 	return 0;

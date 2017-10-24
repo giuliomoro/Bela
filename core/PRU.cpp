@@ -19,9 +19,17 @@
 #include "../include/digital_gpio_mapping.h"
 #include "../include/GPIOcontrol.h"
 #include "../include/Bela.h"
-#include "../include/pru_rtaudio_bin.h"
+namespace pru_mcasp_interrupts
+{
+#include "../include/pru_rtaudio_mcasp_interrupts_bin.h"
+}
+namespace pru_mcasp_polling
+{
+#include "../include/pru_rtaudio_mcasp_poll_bin.h"
+}
 #include "../include/Gpio.h"
 #include "../include/Utilities.h"
+#include "../include/Bela_config.h"
 
 #include <iostream>
 #include <stdlib.h>
@@ -36,12 +44,13 @@
 #include <sys/mman.h>
 #include <string.h>
 
-//#define CTAG_FACE_8CH
-//#define CTAG_BEAST_16CH
-
-#if (defined(CTAGE_FACE_8CH) || defined(CTAG_FACE_16CH))
-	#define PRU_USES_MCASP_IRQ
-	#error TODO: load different PRU code
+#ifdef CODEC_AD1938
+#define PRU_USES_MCASP_IRQ
+const unsigned int* PRUcode = pru_mcasp_interrupts::PRUcode;
+unsigned int PRUcodeSize = sizeof(pru_mcasp_interrupts::PRUcode);
+#elif defiend(CODEC_TLV320)
+	const unsigned int* PRUcode = pru_mcasp_polling::PRUcode;
+	unsigned int PRUcodeSize = sizeof(pru_mcasp_polling::PRUcode);
 #endif
 
 #if !(defined(BELA_USE_POLL) || defined(BELA_USE_RTDM))
@@ -715,7 +724,7 @@ int PRU::start(char * const filename)
 	if(filename[0] == '\0') { //if the string is empty, load the embedded code
 		if(gRTAudioVerbose)
 			printf("Using embedded PRU code\n");
-		if(prussdrv_exec_code(pru_number, PRUcode, sizeof(PRUcode))) {
+		if(prussdrv_exec_code(pru_number, PRUcode, PRUcodeSize)) {
 			fprintf(stderr, "Failed to execute PRU code\n");
 			return 1;
 		}

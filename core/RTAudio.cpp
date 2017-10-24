@@ -12,9 +12,6 @@
 
 //TODO: Improve error detection for Spi_Codec (i.e. evaluate return value)
 
-//#define CTAG_FACE_8CH
-//#define CTAG_BEAST_16CH
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,6 +24,7 @@
 #include <sys/mman.h>
 
 #include "../include/Bela.h"
+#include "../include/Bela_config.h"
 
 // Xenomai-specific includes
 #if XENOMAI_MAJOR == 3
@@ -72,13 +70,10 @@ int gXenomaiInited = 0;
 static const char gRTAudioThreadName[] = "bela-audio";
 
 PRU *gPRU = 0;
-#ifdef CTAG_FACE_8CH
+#ifdef CODEC_AD1938
 	Spi_Codec *gAudioCodec = 0;
 	I2c_Codec *gNotUsedCodec = 0;
-#elif defined(CTAG_BEAST_16CH)
-	Spi_Codec *gAudioCodec = 0;
-	I2c_Codec *gNotUsedCodec = 0;
-#else
+#elif defined(CODEC_TLV320)
 	I2c_Codec *gAudioCodec = 0;
 #endif
 
@@ -235,25 +230,23 @@ int Bela_initAudio(BelaInitSettings *settings, void *userData)
 	}
 
 	// Initialise the rendering environment: sample rates, frame counts, numbers of channels
-	#ifdef CTAG_FACE_8CH
+#ifdef CODEC_AD1938
 		gContext.audioSampleRate = 48000.0;
-	#elif defined(CTAG_BEAST_16CH)
-		gContext.audioSampleRate = 48000.0;
-	#else
+#elif defined(CODEC_TLV320)
 		gContext.audioSampleRate = 44100.0;
-	#endif
+#endif
 
-	// TODO: settings a different number of channels for inputs and outputs is not yet supported
-	#ifdef CTAG_FACE_8CH
+	// TODO: a different number of channels for inputs and outputs is not yet supported
+#ifdef CTAG_FACE_8CH
 		gContext.audioInChannels = 8;
 		gContext.audioOutChannels = 8;
-	#elif defined(CTAG_BEAST_16CH)
+#elif defined(CTAG_BEAST_16CH)
 		gContext.audioInChannels = 16;
 		gContext.audioOutChannels = 16;
-	#else
+#elif defined(CODEC_TLV320)
 		gContext.audioInChannels = 2;
 		gContext.audioOutChannels = 2;
-	#endif
+#endif
 
 	if(settings->useAnalog) {
 		gContext.audioFrames = settings->periodSize;
@@ -316,17 +309,17 @@ int Bela_initAudio(BelaInitSettings *settings, void *userData)
 
 	// Use PRU for audio
 	gPRU = new PRU(&gContext);
-	#ifdef CTAG_FACE_8CH
-		gNotUsedCodec = new I2c_Codec();
-		gNotUsedCodec->disable(); // Put not used codec in high impedance state
-		gAudioCodec = new Spi_Codec();
-	#elif defined(CTAG_BEAST_16CH)
-		gNotUsedCodec = new I2c_Codec();
-		gNotUsedCodec->disable();
-		gAudioCodec = new Spi_Codec();
-	#else
-		gAudioCodec = new I2c_Codec();
-	#endif
+#ifdef CODEC_AD1938
+	gNotUsedCodec = new I2c_Codec();
+	if(gNotUsedCodec->initI2C_RW(2, settings->codecI2CAddress)) {
+		cout << "Unable to open codec I2C\n";
+		return 1;
+	}
+	gNotUsedCodec->disable(); // Put unused codec in high impedance state
+	gAudioCodec = new Spi_Codec();
+#elif defined(CODEC_TLV320)
+	gAudioCodec = new I2c_Codec();
+#endif
  	
 	
 
@@ -348,23 +341,20 @@ int Bela_initAudio(BelaInitSettings *settings, void *userData)
 		return 1;
 	}
 
-	#ifdef CTAG_FACE_8CH
-		gAudioCodec->initCodec();
-		//gAudioCodec->dumpRegisters();
-	#elif defined(CTAG_BEAST_16CH)
-		gAudioCodec->initCodec();
-		//gAudioCodec->dumpRegisters();
-	#else
-		// Prepare the audio codec, which clocks the whole system
-		if(gAudioCodec->initI2C_RW(2, settings->codecI2CAddress, -1)) {
+	// Prepare the audio codec, which clocks the whole system
+#ifdef CODEC_TLV320
+		if(gAudioCodec->initI2C_RW(2, settings->codecI2CAddress)) {
 			cout << "Unable to open codec I2C\n";
 			return 1;
 		}
-		if(gAudioCodec->initCodec()) {
-			cout << "Error: unable to initialise audio codec\n";
-			return 1;
-		}
-	#endif
+#endif
+	if(gAudioCodec->initCodec()) {
+		cout << "Error: unable to initialise audio codec\n";
+		return 1;
+	}
+#ifdef CODEC_AD1938
+	gAudioCodec->dumpRegisters();
+#endif
 
 	// Set default volume levels
 	Bela_setDACLevel(settings->dacLevel);
@@ -415,7 +405,7 @@ static int startAudioInline(){
 
 	// power up and initialize audio codec
 	if(gAudioCodec->startAudio(0)) {
-		fprintf(stderr, "Error: unable to start I2C audio codec\n");
+		fprintf(stderr, "Error: unable to start audio codec\n");
 		return -1;
 	}
 
