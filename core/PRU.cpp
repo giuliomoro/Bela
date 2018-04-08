@@ -1006,14 +1006,13 @@ void PRU::loop(void *userData, void(*render)(BelaContext*, void*), bool highPerf
 				}
 			}
 #ifdef BELA_MODULAR // invert input, assuming a full-range input
-			const float analogInMax = 65535.f/65536.f;
+			const float analogInMax = 0.77;
 			for(unsigned int n = 0; n < context->analogInChannels * context->analogFrames; ++n)
 			{
-				context->analogIn[n] = analogInMax - context->analogIn[n];
-				// if analogInMax is different from 65535/65536, we should
+				context->analogIn[n] = (analogInMax - context->analogIn[n]) / analogInMax;
 				// clip it to avoid reading out of range values:
-				// if(context->analogIn[n] > 1)
-					// context->analogIn[n] = 1;
+				if(context->analogIn[n] < 0)
+					context->analogIn[n] = 0;
 			}
 #endif /* BELA_MODULAR */
 #endif /* USE_NEON_FORMAT_CONVERSION */
