@@ -3137,7 +3137,7 @@ var ProjectView = function (_View) {
     var _this = _possibleConstructorReturn(this, (ProjectView.__proto__ || Object.getPrototypeOf(ProjectView)).call(this, className, models));
 
     _this.$elements.on('click', 'li.proj-li', function (e) {
-      return _this.selectChanged($(e.currentTarget), e);
+      console.log("click li.proj-li", e), _this.selectChanged($(e.currentTarget), e);
     });
     _this.on('example-changed', function () {
       return _this.exampleChanged = true;

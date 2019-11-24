@@ -16,6 +16,7 @@ var dropdowns = function(){
     }
   }
   // accordians
+  console.log("dropdown for accordions");
   $('[data-accordion-for]').on('click', function() {
     var that = $(this);
     var parent = $('[data-tab=' + $(this)[0].dataset.parent + ']');

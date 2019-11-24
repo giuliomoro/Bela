@@ -1,7 +1,8 @@
 var dropdownLoaded = false;
 
-$('[data-tabs]').on('click', function(){
-  if (!dropdownLoaded) {
+$('[data-tabs]').on('click', function(e){
+ console.log('data-tabs loaded?', dropdownLoaded);
+  if (1 || !dropdownLoaded) {
     var $script = $("<script></script>").attr('src', '/js/dropdown.js');
     $script.appendTo($('head'));
     dropdownLoaded = true;
