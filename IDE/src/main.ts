@@ -11,6 +11,9 @@ import * as path from 'path';
 import * as fs from 'fs-extra-promise';
 import * as globals from './globals';
 var TerminalManager = require('./TerminalManager');
+import { Terminal } from 'xterm';
+var pty = require('node-pty');
+var expressWs = require('express-ws');
 
 export async function init(args : Array<any>){
 
@@ -51,13 +54,116 @@ export async function init(args : Array<any>){
 		.catch( (e: Error) => console.log('error checking lockfile', e) );
 
 	// setup webserver
-	const app: express.Application = express();
-	const server: http.Server = new http.Server(app);
+	const app: any = express();
+
+	var server: http.Server = new http.Server(app);
+	expressWs(app);
 	setup_routes(app);
+	
+	var USE_BINARY = false;
+	var terminals: any[] = [];
+	var logs: string[] = [];
+	app.post('/terminals', (req : any, res : any) => {
+		console.log("HIT TERMINALS");
+		const env = Object.assign({}, process.env);
+		env['COLORTERM'] = 'truecolor';
+		var cols = parseInt(req.query.cols),
+		rows = parseInt(req.query.rows),
+		term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
+			name: 'xterm-256color',
+			cols: cols || 80,
+			rows: rows || 24,
+			cwd: process.platform === 'win32' ? undefined : env.PWD,
+			env: env,
+			encoding: USE_BINARY ? null : 'utf8'
+		});
+		console.log('Created terminal with PID: ' + term.pid);
+		terminals[term.pid] = term;
+		logs[term.pid] = '';
+		term.on('data', function(data : string) {
+			logs[term.pid] += data;
+			console.log(data);
+		});
+		res.send(term.pid.toString());
+		res.end();
+	});
+
+	app.post('/terminals/:pid/size', (req : any, res : any) => {
+		var pid = parseInt(req.params.pid),
+		cols = parseInt(req.query.cols),
+		rows = parseInt(req.query.rows),
+		term = terminals[pid];
+
+		term.resize(cols, rows);
+		console.log('Resized terminal ' + pid + ' to ' + cols + ' cols and ' + rows + ' rows.');
+		res.end();
+	});
+
+	app.ws('/terminals/:pid', function (ws : any, req : any) {
+		var term = terminals[parseInt(req.params.pid)];
+		console.log('Connected to terminal ' + term.pid);
+		ws.send(logs[term.pid]);
+
+		// string message buffering
+		function buffer(socket : any, timeout : any) {
+			let s = '';
+			let sender : any = null;
+			return (data : any) => {
+				s += data;
+				if (!sender) {
+					sender = setTimeout(() => {
+						socket.send(s);
+						s = '';
+						sender = null;
+					}, timeout);
+				}
+			};
+		}
+		// binary message buffering
+		function bufferUtf8(socket : any, timeout : any) {
+			let buffer : any = [];
+			let sender : any = null;
+			let length = 0;
+			return (data : any) => {
+				buffer.push(data);
+				length += data.length;
+				if (!sender) {
+					sender = setTimeout(() => {
+						socket.send(Buffer.concat(buffer, length));
+						buffer = [];
+						sender = null;
+						length = 0;
+					}, timeout);
+				}
+			};
+		}
+		const send = USE_BINARY ? bufferUtf8(ws, 5) : buffer(ws, 5);
+
+		term.on('data', function(data : any) {
+			try {
+				send(data);
+			} catch (ex) {
+				// The WebSocket is not open, ignore
+			}
+		});
+		ws.on('message', function(msg : any) {
+			term.write(msg);
+		});
+		ws.on('close', function () {
+			term.kill();
+			console.log('Closed terminal ' + term.pid);
+			// Clean things up
+			delete terminals[term.pid];
+			delete logs[term.pid];
+		});
+	});
 
 	// start serving the IDE
-	server.listen(httpPort, () => console.log('listening on port', httpPort) );
+	//server.listen(httpPort, () => console.log('listening on port', httpPort) );
+	server = app.listen(httpPort, () => console.log('listening on port', httpPort) );
+	//app.listen(httpPort);
 
+	console.log(app);
 	// initialise websocket
 	socket_manager.init(server);
 

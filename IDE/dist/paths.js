@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.set_xenomai_stat = exports.set_Bela = exports.tmp = exports.update = exports.xenomai_stat = exports.lockfile = exports.startup_env = exports.ide_settings = exports.templates = exports.media = exports.exampleTempProject = exports.gui = exports.libraries = exports.examples = exports.uploads = exports.projects = exports.webserver_root = exports.Bela = void 0;
 set_Bela("/root/Bela/");
 function set_Bela(new_path) {
     exports.Bela = (new_path.trim() + '/').replace(/\/\//, '/'); // ensure it ends with a trailing slash

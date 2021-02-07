@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.doxygen = exports.upload = exports.download = void 0;
 var fs = require("fs-extra-promise");
 var paths = require("./paths");
 var socket_manager = require("./SocketManager");

@@ -1,9 +1,10 @@
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -14,8 +15,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [0, t.value];
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -35,6 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.board_detect = exports.shutdown = exports.set_time = exports.get_xenomai_version = exports.get_backup_file_stats = exports.check_lockfile = exports.init = void 0;
 var express = require("express");
 var http = require("http");
 var multer = require("multer");
@@ -47,9 +49,11 @@ var path = require("path");
 var fs = require("fs-extra-promise");
 var globals = require("./globals");
 var TerminalManager = require('./TerminalManager');
+var pty = require('node-pty');
+var expressWs = require('express-ws');
 function init(args) {
     return __awaiter(this, void 0, void 0, function () {
-        var httpPort, ideDev, n, arg, app, server;
+        var httpPort, ideDev, n, arg, app, server, USE_BINARY, terminals, logs;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -93,9 +97,101 @@ function init(args) {
                     _a.sent();
                     app = express();
                     server = new http.Server(app);
+                    expressWs(app);
                     setup_routes(app);
+                    USE_BINARY = false;
+                    terminals = [];
+                    logs = [];
+                    app.post('/terminals', function (req, res) {
+                        console.log("HIT TERMINALS");
+                        var env = Object.assign({}, process.env);
+                        env['COLORTERM'] = 'truecolor';
+                        var cols = parseInt(req.query.cols), rows = parseInt(req.query.rows), term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
+                            name: 'xterm-256color',
+                            cols: cols || 80,
+                            rows: rows || 24,
+                            cwd: process.platform === 'win32' ? undefined : env.PWD,
+                            env: env,
+                            encoding: USE_BINARY ? null : 'utf8'
+                        });
+                        console.log('Created terminal with PID: ' + term.pid);
+                        terminals[term.pid] = term;
+                        logs[term.pid] = '';
+                        term.on('data', function (data) {
+                            logs[term.pid] += data;
+                            console.log(data);
+                        });
+                        res.send(term.pid.toString());
+                        res.end();
+                    });
+                    app.post('/terminals/:pid/size', function (req, res) {
+                        var pid = parseInt(req.params.pid), cols = parseInt(req.query.cols), rows = parseInt(req.query.rows), term = terminals[pid];
+                        term.resize(cols, rows);
+                        console.log('Resized terminal ' + pid + ' to ' + cols + ' cols and ' + rows + ' rows.');
+                        res.end();
+                    });
+                    app.ws('/terminals/:pid', function (ws, req) {
+                        var term = terminals[parseInt(req.params.pid)];
+                        console.log('Connected to terminal ' + term.pid);
+                        ws.send(logs[term.pid]);
+                        // string message buffering
+                        function buffer(socket, timeout) {
+                            var s = '';
+                            var sender = null;
+                            return function (data) {
+                                s += data;
+                                if (!sender) {
+                                    sender = setTimeout(function () {
+                                        socket.send(s);
+                                        s = '';
+                                        sender = null;
+                                    }, timeout);
+                                }
+                            };
+                        }
+                        // binary message buffering
+                        function bufferUtf8(socket, timeout) {
+                            var buffer = [];
+                            var sender = null;
+                            var length = 0;
+                            return function (data) {
+                                buffer.push(data);
+                                length += data.length;
+                                if (!sender) {
+                                    sender = setTimeout(function () {
+                                        socket.send(Buffer.concat(buffer, length));
+                                        buffer = [];
+                                        sender = null;
+                                        length = 0;
+                                    }, timeout);
+                                }
+                            };
+                        }
+                        var send = USE_BINARY ? bufferUtf8(ws, 5) : buffer(ws, 5);
+                        term.on('data', function (data) {
+                            try {
+                                send(data);
+                            }
+                            catch (ex) {
+                                // The WebSocket is not open, ignore
+                            }
+                        });
+                        ws.on('message', function (msg) {
+                            term.write(msg);
+                        });
+                        ws.on('close', function () {
+                            term.kill();
+                            console.log('Closed terminal ' + term.pid);
+                            // Clean things up
+                            delete terminals[term.pid];
+                            delete logs[term.pid];
+                        });
+                    });
                     // start serving the IDE
-                    server.listen(httpPort, function () { return console.log('listening on port', httpPort); });
+                    //server.listen(httpPort, () => console.log('listening on port', httpPort) );
+                    server = app.listen(httpPort, function () { return console.log('listening on port', httpPort); });
+                    //app.listen(httpPort);
+                    console.log(app);
                     // initialise websocket
                     socket_manager.init(server);
                     TerminalManager.init();

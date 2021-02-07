@@ -1,9 +1,10 @@
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -14,8 +15,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [0, t.value];
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -34,18 +35,19 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __values = (this && this.__values) || function (o) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
+var __values = (this && this.__values) || function(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
     if (m) return m.call(o);
-    return {
+    if (o && typeof o.length === "number") return {
         next: function () {
             if (o && i >= o.length) o = void 0;
             return { value: o && o[i++], done: !o };
         }
     };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
 };
-var _this = this;
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.stop = exports.run = exports.checkSyntax = exports.upload = void 0;
 var child_process = require("child_process");
 var file_manager = require("./FileManager");
 var socket_manager = require("./SocketManager");
@@ -68,7 +70,8 @@ var queuedUploads = new MostRecentQueue_1.MostRecentQueue();
 // check started if the flag is set
 function processUploads() {
     return __awaiter(this, void 0, void 0, function () {
-        var _a, _b, id, data, ext, e_1, e_2_1, e_2, _c;
+        var _a, _b, id, data, ext, e_1, e_2_1;
+        var e_2, _c;
         return __generator(this, function (_d) {
             switch (_d.label) {
                 case 0:
@@ -76,7 +79,7 @@ function processUploads() {
                     _d.label = 1;
                 case 1:
                     _d.trys.push([1, 8, 9, 10]);
-                    _a = __values(queuedUploads.keys()), _b = _a.next();
+                    _a = (e_2 = void 0, __values(queuedUploads.keys())), _b = _a.next();
                     _d.label = 2;
                 case 2:
                     if (!!_b.done) return [3 /*break*/, 7];
@@ -213,6 +216,7 @@ function build_run(project) {
 // this function parses the stderr output of the build process 
 // returning true if build errors (not warnings) are found
 function build_error(stderr) {
+    var e_3, _a;
     var lines = stderr.split('\n');
     try {
         for (var lines_1 = __values(lines), lines_1_1 = lines_1.next(); !lines_1_1.done; lines_1_1 = lines_1.next()) {
@@ -236,7 +240,6 @@ function build_error(stderr) {
         finally { if (e_3) throw e_3.error; }
     }
     return false;
-    var e_3, _a;
 }
 // this function is called when the stop button is clicked
 // it calls the stop() method of any running process
@@ -291,8 +294,9 @@ processes.build.on('finish', function (stderr, killed) {
 processes.build.on('stdout', function (data) { return socket_manager.broadcast('status', { buildLog: data }); });
 processes.run.on('start', function (pid, project) {
     socket_manager.broadcast('status', get_status());
-    cpu_monitor.start(pid, project, function (cpu) { return __awaiter(_this, void 0, void 0, function () {
-        var _a, _b, _c, _d;
+    cpu_monitor.start(pid, project, function (cpu) { return __awaiter(void 0, void 0, void 0, function () {
+        var _a, _b, _c;
+        var _d;
         return __generator(this, function (_e) {
             switch (_e.label) {
                 case 0:

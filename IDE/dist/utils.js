@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.File_Descriptor = void 0;
 // descriptor of a filesystem entry. directories have size undefined, files have children undefined
 var File_Descriptor = /** @class */ (function () {
     function File_Descriptor(name, size, children) {

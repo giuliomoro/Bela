@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Lock = void 0;
 var await_lock_1 = require("await-lock");
 // Simplified stacktrace function
 function stacktrace() {
@@ -35,7 +36,7 @@ var Lock = /** @class */ (function () {
         get: function () {
             return this.lock.acquired;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Lock.prototype.tryAcquire = function () {

@@ -3,6 +3,7 @@
 // most-recent push() overwrites any previous ones
 // in other words, a map wrapped up to look like a queue.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.MostRecentQueue = void 0;
 var MostRecentQueue = /** @class */ (function () {
     function MostRecentQueue() {
         this.q = new Map;
@@ -11,7 +12,7 @@ var MostRecentQueue = /** @class */ (function () {
         get: function () {
             return this.q.size;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     MostRecentQueue.prototype.keys = function () {

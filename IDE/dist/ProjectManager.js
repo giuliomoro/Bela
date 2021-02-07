@@ -1,9 +1,10 @@
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -14,8 +15,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [0, t.value];
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -34,17 +35,19 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __values = (this && this.__values) || function (o) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
+var __values = (this && this.__values) || function(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
     if (m) return m.call(o);
-    return {
+    if (o && typeof o.length === "number") return {
         next: function () {
             if (o && i >= o.length) o = void 0;
             return { value: o && o[i++], done: !o };
         }
     };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.projectExists = exports.listFiles = exports.deleteFile = exports.renameFolder = exports.renameFile = exports.moveUploadedFile = exports.cleanFile = exports.uploadZipProject = exports.uploadFile = exports.newFolder = exports.newFile = exports.cleanProject = exports.deleteProject = exports.saveAs = exports.newProject = exports.openExample = exports.openProject = exports.listExamples = exports.listLibraries = exports.listProjects = exports.openFile = void 0;
 var file_manager = require("./FileManager");
 var git_manager = require("./GitManager");
 var project_settings = require("./ProjectSettings");
@@ -79,7 +82,8 @@ function emptyObject(obj) {
 // if the file is an image or audio file, it is symlinked from the media folder
 function openFile(data) {
     return __awaiter(this, void 0, void 0, function () {
-        var file_path, file_stat, e_1, _a, _b, file, e_2_1, chunk, file_type, is_binary, _c, e_3, e_2, _d;
+        var file_path, file_stat, e_1, _a, _b, file, e_2_1, chunk, file_type, is_binary, _c, e_3;
+        var e_2, _d;
         return __generator(this, function (_e) {
             switch (_e.label) {
                 case 0:
@@ -227,7 +231,8 @@ function listProjects() {
 exports.listProjects = listProjects;
 function listLibraries() {
     return __awaiter(this, void 0, void 0, function () {
-        var libraries, categories, categories_1, categories_1_1, category, _a, _b, _c, e_4_1, e_4, _d;
+        var libraries, categories, categories_1, categories_1_1, category, _a, _b, e_4_1;
+        var e_4, _c, _d;
         return __generator(this, function (_e) {
             switch (_e.label) {
                 case 0:
@@ -247,13 +252,13 @@ function listLibraries() {
                 case 4:
                     if (!_e.sent()) return [3 /*break*/, 6];
                     _b = (_a = libraries).push;
-                    _c = {
+                    _d = {
                         name: category
                     };
                     return [4 /*yield*/, file_manager.read_directory(paths.libraries + '/' + category)];
                 case 5:
-                    _b.apply(_a, [(_c.children = _e.sent(),
-                            _c)]);
+                    _b.apply(_a, [(_d.children = _e.sent(),
+                            _d)]);
                     _e.label = 6;
                 case 6:
                     categories_1_1 = categories_1.next();
@@ -265,7 +270,7 @@ function listLibraries() {
                     return [3 /*break*/, 10];
                 case 9:
                     try {
-                        if (categories_1_1 && !categories_1_1.done && (_d = categories_1.return)) _d.call(categories_1);
+                        if (categories_1_1 && !categories_1_1.done && (_c = categories_1.return)) _c.call(categories_1);
                     }
                     finally { if (e_4) throw e_4.error; }
                     return [7 /*endfinally*/];
@@ -277,7 +282,8 @@ function listLibraries() {
 exports.listLibraries = listLibraries;
 function listExamples() {
     return __awaiter(this, void 0, void 0, function () {
-        var examples, categories, categories_2, categories_2_1, category, parsedChildren, children, children_1, children_1_1, child, e_5_1, e_5, _a, e_6, _b;
+        var examples, categories, categories_2, categories_2_1, category, parsedChildren, children, children_1, children_1_1, child, e_5_1;
+        var e_5, _a, e_6, _b;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
@@ -301,7 +307,7 @@ function listExamples() {
                 case 5:
                     children = _c.sent();
                     try {
-                        for (children_1 = __values(children), children_1_1 = children_1.next(); !children_1_1.done; children_1_1 = children_1.next()) {
+                        for (children_1 = (e_6 = void 0, __values(children)), children_1_1 = children_1.next(); !children_1_1.done; children_1_1 = children_1.next()) {
                             child = children_1_1.value;
                             if (child.split('.').length < 2 || child.split('.').pop() === 'json') {
                                 parsedChildren.push(child);
@@ -483,7 +489,8 @@ function saveAs(data) {
 exports.saveAs = saveAs;
 function deleteProject(data) {
     return __awaiter(this, void 0, void 0, function () {
-        var _a, _b, _c, project, e_7_1, e_7, _d;
+        var _a, _b, _c, project, e_7_1;
+        var e_7, _d;
         return __generator(this, function (_e) {
             switch (_e.label) {
                 case 0: return [4 /*yield*/, file_manager.delete_file(paths.projects + data.currentProject)];
@@ -651,8 +658,8 @@ function uploadFile(data) {
 exports.uploadFile = uploadFile;
 function uploadZipProject(data) {
     return __awaiter(this, void 0, void 0, function () {
-        var _this = this;
         var tmp_path, tmp_target_path, target_path, file_exists, _a, _cleanup;
+        var _this = this;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
